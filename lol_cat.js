@@ -104,14 +104,18 @@ var notMatchingCards = function() {
 		secondCard.src='hedgehog.png';
 		gameState.isWaiting = false;
 	},
-	2000);
+	1500);
 	console.log('not matching');
 };
 
 var youWin = function(){
-	if (confirm('Congratulations, you win! Click OK to play again.')) {
-		window.location.reload();
-	}
+	// Put the confirm event on the event queue so it doesn't
+	// block the rendering of swapping images.
+	setTimeout(function() {
+		if (confirm('Congratulations, you win! Click OK to play again.')) {
+			window.location.reload();
+		}
+	}, 0);
 };
 
 window.onload = function() {
