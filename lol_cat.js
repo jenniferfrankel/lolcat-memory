@@ -51,7 +51,7 @@ var preloadImages = function(urlList, onSuccess, onFail)  {
 	}
 };
 
-// Layout the cards
+// Lay out the cards
 var createTiles = function(urlList) {
 	var loader = document.getElementById("loader");
 	loader.parentElement.removeChild(loader);
@@ -115,7 +115,7 @@ var matchingCards = function() {
 var notMatchingCards = function() {
 	var card1 = getCardElement(gameState.flippedIds[0]);
 	var card2 = getCardElement(gameState.flippedIds[1]);
-	var resetFlippedTiles = function(indexA, indexB) {
+	var resetFlippedTiles = function() {
 		card1.src = 'hedgehog.png';
 		card2.src = 'hedgehog.png';
 		gameState.isWaiting = false;
@@ -142,18 +142,18 @@ var youWin = function(){
 window.onload = function() {
 	gameState.totalPairs = 8;
 	var retries = 10;
-	var urlList = duplicateAndShuffle(generateUrls(gameState.totalPairs));
+	var urlList = generateUrls(gameState.totalPairs);
 	var success = function() {
 		console.log("Image preloading success!");
-		createTiles(urlList);
+		createTiles(duplicateAndShuffle(urlList));
 	};
 	var fail = function() {
 		console.log("Image preloading failed, retrying");
-		urlList = duplicateAndShuffle(generateUrls(gameState.totalPairs));
-		preloader(retries--);
+		urlList = generateUrls(gameState.totalPairs);
+		preloader();
 	};
 	var preloader = function() {
-		if (retries > 0) {
+		if (--retries > 0) {
 			preloadImages(urlList, success, fail);
 		} else {
 			alert("Could not load images :(");
