@@ -1,111 +1,124 @@
 (function() {
 
 // Generate list of URLs
-var generateUrls = function() {
-	var url_list = [];
-	var i;
-	for(i = 0; i <= 7; i++) {
-		var url = 'http://lolcat.com/images/lolcats/';
-		var rand_n = 900 + Math.floor(Math.random() * 300);
-		url = url + rand_n + ".jpg";
-
-		var rand_pos_1 = Math.floor(Math.random() * url_list.length);
-		url_list.splice(rand_pos_1, 0, url);
-		var rand_pos_2 = Math.floor(Math.random() * url_list.length);
-		url_list.splice(rand_pos_2, 0, url);
+var generateUrls = function(count) {
+	var i, n, urls = [];
+	for (i = 0; i < count; i++) {
+		n = 900 + Math.floor((Math.random() * 1000));
+		urls.push('http://lolcat.com/images/lolcats/'+n+'.jpg');
 	}
-	return url_list;
+	return urls;
 };
 
-// Preload lolcat images
-var preloadImages = function(url_list)  {
-	for (var i = 0; i < url_list.length; i++) {
+
+var duplicateAndShuffle = function(array) {
+	// Append array to itself and then shuffle by sorting by random
+	return (array.concat(array)).sort(function() {
+		return -1 + Math.round(Math.random())*2;
+	});
+};
+
+// Preload lolcat images. If one of the images fails to load, the onFail callback
+// will be called. Otherwise, when all images are preloaded - onSuccess will be called.
+var preloadImages = function(urlList, onSuccess, onFail)  {
+	var printer = function(e) { console.log(e); };
+	var count = urlList.length;
+	var fail = function() {
+		if (count > 0) {
+			count = 0;
+			setTimeout(onFail, 0);
+		}
+	};
+	var success = function() {
+		if ((--count) === 0) {
+			setTimeout(onSuccess, 0);
+		}
+	};
+	for (var i = 0; i < urlList.length; i++) {
 		var img = new Image();
-		img.src = url_list[i];
+		img.src = urlList[i];
+		img.onload = success;
+		img.onerror = fail;
 		var container = document.getElementById("imagePreloader");
 		container.appendChild(img);
 	}
 };
 
-var createTiles = function(url_list) {
-	var gridEl = document.getElementById("grid");
+// Layout the cards
+var createTiles = function(urlList) {
+	var loader = document.getElementById("loader");
+	loader.parentElement.removeChild(loader);
+	var i, gridEl = document.getElementById("grid");
 	// We need this function for making sure we keep the index from inside the loop.
 	// See: http://goo.gl/IUGGs
-	var bouncy = function (imgEl, index) {
+	var setOnClickHandler = function (imgEl, index) {
 		imgEl.onclick = function() {
-			clickHandler(index, url_list);
+			clickHandler(index, urlList);
 		};
 	};
-	for (var i=0; i<=15; i++){
+	for (i = 0; i < urlList.length; i++){
 		var liEl = document.createElement('li');
 		var imgEl = document.createElement('img');
 		imgEl.src = "hedgehog.png";
 		imgEl.id = "hedgehog_"+i;
-		bouncy(imgEl, i);
+		setOnClickHandler(imgEl, i);
 		liEl.appendChild(imgEl);
 		gridEl.appendChild(liEl);
 	}
 };
 
+// We keep a shared game state
 var gameState = {
-	flippedIds : [],
-	pairsFound : 0,
-	isWaiting : false
+	flippedIds : [],   // Id's of the cards that are currently flipped
+	pairsFound : [],    // Number of pairs that have been found
+	isWaiting : false,  // Indication that we are showing bad cards
+	totalPairs : 0
 };
 
-var clickHandler = function(theUrlIndex, url_list) {
-	if (gameState.isWaiting){
+var clickHandler = function(cardIndex, urlList) {
+	var clickedSameCard = gameState.flippedIds.length == 1 && gameState.flippedIds[0] == cardIndex;
+	if (gameState.isWaiting || clickedSameCard){
 		return;
 	}
-	if (gameState.flippedIds.length == 1 && gameState.flippedIds[0] == theUrlIndex) {
-		return;
-	}
-	console.log('a click happened');
-	console.log('the url: ' + url_list[theUrlIndex]);
 
-	var hedgehogEl = window.document.getElementById("hedgehog_"+theUrlIndex);
+	// Swap the image of the clicked card
+	getCardElement(cardIndex).src = urlList[cardIndex];
 
-	hedgehogEl.src=url_list[theUrlIndex];
-
-	gameState.flippedIds.push(theUrlIndex);
+	gameState.flippedIds.push(cardIndex);
 	if (gameState.flippedIds.length == 2) {
-		if (url_list[gameState.flippedIds[0]] == url_list[gameState.flippedIds[1]]){
-			gameState.pairsFound ++;
+		if (urlList[gameState.flippedIds[0]] == urlList[gameState.flippedIds[1]]){
+			gameState.pairsFound.push(gameState.flippedIds);
 			matchingCards();
 		}
 		else {
 			notMatchingCards();
 		}
 		gameState.flippedIds = [];
-		console.log('empty the gameState.flippedIds list');
 	}
-	console.log('lolcat');
 };
 
 var matchingCards = function() {
-	if (gameState.pairsFound == 8) {
+	if (gameState.pairsFound.length == gameState.totalPairs) {
 		youWin();
 	}
-	var firstCard = window.document.getElementById("hedgehog_"+gameState.flippedIds[0]);
-	firstCard.onclick = null;
-	console.log('first card unclickable');
-	var secondCard = window.document.getElementById("hedgehog_"+gameState.flippedIds[1]);
-	secondCard.onclick = null;
-	console.log('second card unclickable');
+	getCardElement(gameState.flippedIds[0]).onclick = null;
+	getCardElement(gameState.flippedIds[1]).onclick = null;
 };
 
 var notMatchingCards = function() {
-	var firstCard = window.document.getElementById("hedgehog_"+gameState.flippedIds[0]);
-
-	var secondCard = window.document.getElementById("hedgehog_"+gameState.flippedIds[1]);
-	gameState.isWaiting = true;
-	setTimeout(function(){
-		firstCard.src='hedgehog.png';
-		secondCard.src='hedgehog.png';
+	var card1 = getCardElement(gameState.flippedIds[0]);
+	var card2 = getCardElement(gameState.flippedIds[1]);
+	var resetFlippedTiles = function(indexA, indexB) {
+		card1.src = 'hedgehog.png';
+		card2.src = 'hedgehog.png';
 		gameState.isWaiting = false;
-	},
-	1500);
-	console.log('not matching');
+	};
+	gameState.isWaiting = true;
+	setTimeout(resetFlippedTiles, 1500);
+};
+
+var getCardElement = function(index) {
+	return window.document.getElementById("hedgehog_"+index);
 };
 
 var youWin = function(){
@@ -118,9 +131,28 @@ var youWin = function(){
 	}, 0);
 };
 
+// Bootstrap the application
 window.onload = function() {
-	var url_list = generateUrls();
-	preloadImages(url_list);
-	createTiles(url_list);
+	gameState.totalPairs = 8;
+	var retries = 10;
+	var urlList = duplicateAndShuffle(generateUrls(gameState.totalPairs));
+	var success = function() {
+		console.log("Image preloading success!");
+		createTiles(urlList);
+	};
+	var fail = function() {
+		console.log("Image preloading failed, retrying");
+		urlList = duplicateAndShuffle(generateUrls(gameState.totalPairs));
+		preloader(retries--);
+	};
+	var preloader = function() {
+		if (retries > 0) {
+			preloadImages(urlList, success, fail);
+		} else {
+			alert("Could not load images :(");
+		}
+	};
+	preloader();
 };
+
 }());

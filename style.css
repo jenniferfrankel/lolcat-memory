@@ -3,6 +3,7 @@
 body {
   color: #BFBFBF;
   background-color: #8691A6;
+  font-family: sans-serif;  
 }
 
 #grid {
@@ -23,7 +24,6 @@ body {
   background-color: #384C73;
   width: 60em; /*was 510*/
   /*these two properties will be inherited by .portfolio h2 and .portfolio p */
-  font-family: 'GraublauWeb', serif; 
   text-align: center;
   }
   
@@ -32,7 +32,6 @@ div.grid_display h2 {
   clear: both;
   font-weight: normal;
   background: none;
-  font-family: 'GraublauWeb', arial, serif;  
 
   /* 
   reset for cascade effects that are trickling down to me 
