@@ -12,10 +12,17 @@ var generateUrls = function(count) {
 
 
 var duplicateAndShuffle = function(array) {
-	// Append array to itself and then shuffle by sorting by random
-	return (array.concat(array)).sort(function() {
-		return -1 + Math.round(Math.random())*2;
-	});
+	// Append array to itself and then shuffle by popping off
+	// random elements and pushing them to a new array
+	var duplicateArray = array.concat(array);
+	var shuffled = [];
+	var count = duplicateArray.length;
+	var index;
+	for (var i = 0; i < count; i++) {
+		index = Math.floor(Math.random()*duplicateArray.length);
+		shuffled.push(duplicateArray.splice(index,1)[0]);
+	}
+	return shuffled;
 };
 
 // Preload lolcat images. If one of the images fails to load, the onFail callback
